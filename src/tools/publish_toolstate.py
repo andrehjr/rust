@@ -27,6 +27,7 @@ MAINTAINERS = {
         '@ryankurte @thejpster @therealprof'
     ),
     'edition-guide': '@ehuss @Centril @steveklabnik',
+    'rustc-guide': '@mark-i-m'
 }
 
 REPOS = {
@@ -40,6 +41,7 @@ REPOS = {
     'rust-by-example': 'https://github.com/rust-lang/rust-by-example',
     'embedded-book': 'https://github.com/rust-embedded/book',
     'edition-guide': 'https://github.com/rust-lang-nursery/edition-guide',
+    'rustc-guide': 'https://github.com/rust-lang/rustc-guide',
 }
 
 
