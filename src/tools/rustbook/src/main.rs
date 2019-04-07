@@ -11,7 +11,12 @@ use mdbook_1::{MDBook as MDBook1};
 use mdbook_1::errors::{Result as Result1};
 
 use mdbook_2::{MDBook as MDBook2};
+use mdbook_2::renderer::{RenderContext as RenderContext2};
 use mdbook_2::errors::{Result as Result2};
+use mdbook_linkcheck;
+use mdbook_linkcheck::errors::BrokenLinks;
+use failure::Error;
+
 
 fn main() {
     let d_message = "-d, --dest-dir=[dest-dir]
@@ -31,6 +36,9 @@ fn main() {
                         .arg_from_usage(d_message)
                         .arg_from_usage(dir_message)
                         .arg_from_usage(vers_message))
+                    .subcommand(SubCommand::with_name("linkcheck")
+                        .about("Run linkcheck with mdBook 2")
+                        .arg_from_usage(dir_message))
                     .get_matches();
 
     // Check which subcomamnd the user ran...
@@ -64,8 +72,30 @@ fn main() {
                 }
             };
         },
+        ("linkcheck", Some(sub_matches)) => {
+            if let Err(err) = linkcheck(sub_matches) {
+                eprintln!("Error: {}", err);
+
+                if let Ok(broken_links) = err.downcast::<BrokenLinks>() {
+                    for cause in broken_links.links().iter() {
+                        eprintln!("\tCaused By: {}", cause);
+                    }
+                }
+
+                ::std::process::exit(101);
+            }
+        },
         (_, _) => unreachable!(),
     };
+}
+
+pub fn linkcheck(args: &ArgMatches<'_>) -> Result<(), Error> {
+    let book_dir = get_book_dir(args);
+    let book = MDBook2::load(&book_dir).unwrap();
+    let cfg = book.config;
+    let render_ctx = RenderContext2::new(&book_dir, book.book, cfg, &book_dir);
+
+    mdbook_linkcheck::check_links(&render_ctx)
 }
 
 // Build command implementation
