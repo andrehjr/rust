@@ -11,12 +11,18 @@ use mdbook_1::{MDBook as MDBook1};
 use mdbook_1::errors::{Result as Result1};
 
 use mdbook_2::{MDBook as MDBook2};
-use mdbook_2::renderer::{RenderContext as RenderContext2};
 use mdbook_2::errors::{Result as Result2};
-use mdbook_linkcheck;
-use mdbook_linkcheck::errors::BrokenLinks;
+
+use mdbook_3::{MDBook as MDBook3};
+use mdbook_3::renderer::{RenderContext as RenderContext3};
+
+#[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+use mdbook_linkcheck::{self, errors::BrokenLinks};
+
 use failure::Error;
 
+#[cfg(not(all(target_arch = "x86_64", target_os = "linux")))]
+use failure::bail;
 
 fn main() {
     let d_message = "-d, --dest-dir=[dest-dir]
@@ -37,7 +43,7 @@ fn main() {
                         .arg_from_usage(dir_message)
                         .arg_from_usage(vers_message))
                     .subcommand(SubCommand::with_name("linkcheck")
-                        .about("Run linkcheck with mdBook 2")
+                        .about("Run linkcheck with mdBook 3")
                         .arg_from_usage(dir_message))
                     .get_matches();
 
@@ -89,13 +95,19 @@ fn main() {
     };
 }
 
+#[cfg(all(target_arch = "x86_64", target_os = "linux"))]
 pub fn linkcheck(args: &ArgMatches<'_>) -> Result<(), Error> {
     let book_dir = get_book_dir(args);
-    let book = MDBook2::load(&book_dir).unwrap();
+    let book = MDBook3::load(&book_dir).unwrap();
     let cfg = book.config;
-    let render_ctx = RenderContext2::new(&book_dir, book.book, cfg, &book_dir);
+    let render_ctx = RenderContext3::new(&book_dir, book.book, cfg, &book_dir);
 
     mdbook_linkcheck::check_links(&render_ctx)
+}
+
+#[cfg(not(all(target_arch = "x86_64", target_os = "linux")))]
+pub fn linkcheck(args: &ArgMatches<'_>) -> Result<(), Error> {
+    bail!("mdbook-linkcheck only works on x86_64 linux targets.");
 }
 
 // Build command implementation
